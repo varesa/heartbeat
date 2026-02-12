@@ -5,21 +5,6 @@ const MARKDOWN_V2_SPECIAL: &[char] = &[
     '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!',
 ];
 
-/// Escape text for Telegram MarkdownV2 format.
-///
-/// Characters inside backtick code spans do NOT need escaping, but all other
-/// text in the message does.
-pub fn escape_markdown_v2(text: &str) -> String {
-    let mut result = String::with_capacity(text.len() * 2);
-    for ch in text.chars() {
-        if MARKDOWN_V2_SPECIAL.contains(&ch) {
-            result.push('\\');
-        }
-        result.push(ch);
-    }
-    result
-}
-
 /// Format a human-readable duration from seconds using humantime.
 fn format_duration(secs: u64) -> String {
     if secs == 0 {
@@ -116,13 +101,6 @@ fn escape_around_code_spans(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_escape_markdown_v2() {
-        assert_eq!(escape_markdown_v2("hello"), "hello");
-        assert_eq!(escape_markdown_v2("a.b"), "a\\.b");
-        assert_eq!(escape_markdown_v2("a_b*c"), "a\\_b\\*c");
-    }
 
     #[test]
     fn test_format_overdue_contains_slug() {
