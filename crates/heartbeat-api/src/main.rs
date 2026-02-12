@@ -52,6 +52,22 @@ async fn main() {
             "/heartbeat/{slug}/fail",
             axum::routing::post(routes::fail_handler),
         )
+        .route(
+            "/monitors",
+            axum::routing::get(routes::list_monitors_handler),
+        )
+        .route(
+            "/monitors/{slug}",
+            axum::routing::delete(routes::delete_monitor_handler),
+        )
+        .route(
+            "/monitors/{slug}/pause",
+            axum::routing::post(routes::pause_handler),
+        )
+        .route(
+            "/monitors/{slug}/unpause",
+            axum::routing::post(routes::unpause_handler),
+        )
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

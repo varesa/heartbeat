@@ -1,4 +1,5 @@
 use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
 use axum::Json;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -31,6 +32,19 @@ pub struct HeartbeatResponse {
 pub struct FailResponse {
     pub ok: bool,
     pub status: MonitorStatus,
+}
+
+#[derive(Serialize)]
+pub struct MonitorListItem {
+    pub slug: String,
+    pub status: MonitorStatus,
+    pub last_ping: i64,
+    pub next_due: i64,
+}
+
+#[derive(Serialize)]
+pub struct MonitorListResponse {
+    pub monitors: Vec<MonitorListItem>,
 }
 
 /// GET /heartbeat/{slug}?interval=5m
@@ -151,4 +165,68 @@ pub async fn fail_handler(
         ok: true,
         status,
     }))
+}
+
+/// GET /monitors
+///
+/// Returns all monitors sorted alphabetically by slug.
+pub async fn list_monitors_handler(
+    State(state): State<AppState>,
+    _api_key: ApiKey,
+) -> Result<Json<MonitorListResponse>, ApiError> {
+    let monitors = state.monitors_store.list_monitors().await?;
+    let now = Utc::now().timestamp();
+
+    let mut items: Vec<MonitorListItem> = monitors
+        .iter()
+        .map(|m| MonitorListItem {
+            slug: m.slug.clone(),
+            status: MonitorStatus::derive(m, now),
+            last_ping: m.last_ping,
+            next_due: m.next_due,
+        })
+        .collect();
+
+    items.sort_by(|a, b| a.slug.cmp(&b.slug));
+
+    Ok(Json(MonitorListResponse { monitors: items }))
+}
+
+/// DELETE /monitors/{slug}
+///
+/// Removes a monitor from DynamoDB. Returns 204 on success, 404 if not found.
+pub async fn delete_monitor_handler(
+    State(state): State<AppState>,
+    _api_key: ApiKey,
+    Path(slug_str): Path<String>,
+) -> Result<StatusCode, ApiError> {
+    let slug = Slug::new(&slug_str).map_err(|e| ApiError::InvalidSlug(e.to_string()))?;
+    state.monitors_store.delete_monitor(&slug).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// POST /monitors/{slug}/pause
+///
+/// Pauses a monitor, clearing alert state. Returns 204 on success, 404 if not found.
+pub async fn pause_handler(
+    State(state): State<AppState>,
+    _api_key: ApiKey,
+    Path(slug_str): Path<String>,
+) -> Result<StatusCode, ApiError> {
+    let slug = Slug::new(&slug_str).map_err(|e| ApiError::InvalidSlug(e.to_string()))?;
+    state.monitors_store.set_paused(&slug, true).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// POST /monitors/{slug}/unpause
+///
+/// Unpauses a monitor. Returns 204 on success, 404 if not found.
+pub async fn unpause_handler(
+    State(state): State<AppState>,
+    _api_key: ApiKey,
+    Path(slug_str): Path<String>,
+) -> Result<StatusCode, ApiError> {
+    let slug = Slug::new(&slug_str).map_err(|e| ApiError::InvalidSlug(e.to_string()))?;
+    state.monitors_store.set_paused(&slug, false).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
