@@ -1,2 +1,4 @@
 .planning/
 target/
+terraform/.terraform/
+terraform/placeholder.zip
