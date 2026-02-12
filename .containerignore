@@ -1,0 +1,5 @@
+target/
+.git/
+.planning/
+terraform/
+.jj/
