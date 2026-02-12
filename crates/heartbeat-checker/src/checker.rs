@@ -1,54 +1,15 @@
 use std::collections::HashSet;
-use std::fmt;
 
 use chrono::Utc;
-use heartbeat_core::{CoreError, DynamoStore, MonitorStatus};
+use heartbeat_core::{DynamoStore, MonitorStatus};
 use tracing::{info, warn};
 
 use crate::alerts;
-use crate::telegram::{TelegramClient, TelegramError};
+use crate::errors::CheckerError;
+use crate::telegram::TelegramClient;
 
 /// Fixed repeat alert interval: 1 hour in seconds.
 const REPEAT_ALERT_INTERVAL_SECS: i64 = 3600;
-
-/// Errors from the checker.
-#[derive(Debug)]
-pub enum CheckerError {
-    /// Error from DynamoDB operations.
-    Core(CoreError),
-    /// Error from Telegram API.
-    Telegram(TelegramError),
-}
-
-impl fmt::Display for CheckerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Core(e) => write!(f, "checker core error: {e}"),
-            Self::Telegram(e) => write!(f, "checker telegram error: {e}"),
-        }
-    }
-}
-
-impl std::error::Error for CheckerError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::Core(e) => Some(e),
-            Self::Telegram(e) => Some(e),
-        }
-    }
-}
-
-impl From<CoreError> for CheckerError {
-    fn from(e: CoreError) -> Self {
-        Self::Core(e)
-    }
-}
-
-impl From<TelegramError> for CheckerError {
-    fn from(e: TelegramError) -> Self {
-        Self::Telegram(e)
-    }
-}
 
 /// Run the heartbeat check cycle.
 ///

@@ -1,4 +1,5 @@
 mod auth;
+mod errors;
 mod interval;
 mod routes;
 mod state;

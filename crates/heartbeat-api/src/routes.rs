@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use heartbeat_core::{Monitor, MonitorStatus, Slug};
 
-use crate::auth::{ApiError, ApiKey};
+use crate::auth::ApiKey;
+use crate::errors::ApiError;
 use crate::interval::{parse_interval, MAX_INTERVAL, MIN_INTERVAL};
 use crate::state::AppState;
 

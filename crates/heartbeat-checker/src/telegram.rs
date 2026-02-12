@@ -1,8 +1,9 @@
-use std::fmt;
 use std::time::Duration;
 
 use serde::Serialize;
 use tracing::{info, warn};
+
+use crate::errors::TelegramError;
 
 /// Telegram Bot API client for sending alert messages.
 #[derive(Clone)]
@@ -10,39 +11,6 @@ pub struct TelegramClient {
     http: reqwest::Client,
     bot_token: String,
     chat_id: String,
-}
-
-/// Errors from the Telegram API.
-#[derive(Debug)]
-pub enum TelegramError {
-    /// HTTP transport error.
-    Http(reqwest::Error),
-    /// Telegram API returned a non-ok response.
-    ApiError(String),
-}
-
-impl fmt::Display for TelegramError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Http(e) => write!(f, "Telegram HTTP error: {e}"),
-            Self::ApiError(msg) => write!(f, "Telegram API error: {msg}"),
-        }
-    }
-}
-
-impl std::error::Error for TelegramError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::Http(e) => Some(e),
-            Self::ApiError(_) => None,
-        }
-    }
-}
-
-impl From<reqwest::Error> for TelegramError {
-    fn from(e: reqwest::Error) -> Self {
-        Self::Http(e)
-    }
 }
 
 #[derive(Serialize)]

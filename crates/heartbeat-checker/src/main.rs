@@ -1,5 +1,6 @@
 mod alerts;
 mod checker;
+mod errors;
 mod telegram;
 
 use std::env;
