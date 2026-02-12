@@ -14,4 +14,7 @@ pub enum CoreError {
 
     #[error("Slug validation error: {0}")]
     Slug(#[from] crate::model::SlugError),
+
+    #[error("Not found: {0}")]
+    NotFound(String),
 }

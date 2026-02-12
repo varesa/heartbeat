@@ -67,6 +67,8 @@ pub enum ApiError {
     InvalidSlug(String),
     /// Invalid interval value.
     InvalidInterval(String),
+    /// Resource not found.
+    NotFound(String),
     /// Internal server error.
     Internal,
 }
@@ -80,6 +82,7 @@ impl IntoResponse for ApiError {
             ),
             ApiError::InvalidSlug(msg) => (StatusCode::BAD_REQUEST, msg),
             ApiError::InvalidInterval(msg) => (StatusCode::BAD_REQUEST, msg),
+            ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             ApiError::Internal => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal server error".to_string(),
@@ -93,7 +96,12 @@ impl IntoResponse for ApiError {
 
 impl From<heartbeat_core::CoreError> for ApiError {
     fn from(err: heartbeat_core::CoreError) -> Self {
-        tracing::error!("Core error: {err}");
-        ApiError::Internal
+        match err {
+            heartbeat_core::CoreError::NotFound(msg) => ApiError::NotFound(msg),
+            other => {
+                tracing::error!("Core error: {other}");
+                ApiError::Internal
+            }
+        }
     }
 }

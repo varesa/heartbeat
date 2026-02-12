@@ -181,6 +181,91 @@ impl DynamoStore {
         Ok(())
     }
 
-    // Phase 4: pub async fn list_monitors(&self) -> Result<Vec<Monitor>, CoreError>
-    // Phase 4: pub async fn delete_monitor(&self, slug: &Slug) -> Result<(), CoreError>
+    /// List all monitors in the table.
+    ///
+    /// Uses a full table scan. Logs a warning if results are paginated (>1MB).
+    pub async fn list_monitors(&self) -> Result<Vec<Monitor>, CoreError> {
+        let result = self
+            .client
+            .scan()
+            .table_name(&self.table_name)
+            .send()
+            .await
+            .map_err(|e| CoreError::DynamoSdk(Box::new(e)))?;
+
+        if result.last_evaluated_key().is_some() {
+            tracing::warn!(
+                "Scan exceeded 1MB page size, results may be incomplete. \
+                 Consider pagination for large tables."
+            );
+        }
+
+        let monitors: Vec<Monitor> = serde_dynamo::from_items(result.items().to_vec())?;
+        Ok(monitors)
+    }
+
+    /// Delete a monitor by slug.
+    ///
+    /// Returns `CoreError::NotFound` if the monitor does not exist.
+    pub async fn delete_monitor(&self, slug: &Slug) -> Result<(), CoreError> {
+        let result = self
+            .client
+            .delete_item()
+            .table_name(&self.table_name)
+            .key("slug", AttributeValue::S(slug.to_string()))
+            .condition_expression("attribute_exists(slug)")
+            .send()
+            .await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                let service_err = e.into_service_error();
+                if service_err.is_conditional_check_failed_exception() {
+                    Err(CoreError::NotFound(slug.to_string()))
+                } else {
+                    Err(CoreError::DynamoSdk(Box::new(service_err)))
+                }
+            }
+        }
+    }
+
+    /// Set or clear the paused state for a monitor.
+    ///
+    /// When pausing (`paused = true`), also clears `last_alerted_at` and `alert_count`.
+    /// Returns `CoreError::NotFound` if the monitor does not exist.
+    pub async fn set_paused(&self, slug: &Slug, paused: bool) -> Result<(), CoreError> {
+        let result = if paused {
+            self.client
+                .update_item()
+                .table_name(&self.table_name)
+                .key("slug", AttributeValue::S(slug.to_string()))
+                .update_expression("SET paused = :val REMOVE last_alerted_at, alert_count")
+                .expression_attribute_values(":val", AttributeValue::Bool(true))
+                .condition_expression("attribute_exists(slug)")
+                .send()
+                .await
+        } else {
+            self.client
+                .update_item()
+                .table_name(&self.table_name)
+                .key("slug", AttributeValue::S(slug.to_string()))
+                .update_expression("REMOVE paused")
+                .condition_expression("attribute_exists(slug)")
+                .send()
+                .await
+        };
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                let service_err = e.into_service_error();
+                if service_err.is_conditional_check_failed_exception() {
+                    Err(CoreError::NotFound(slug.to_string()))
+                } else {
+                    Err(CoreError::DynamoSdk(Box::new(service_err)))
+                }
+            }
+        }
+    }
 }
