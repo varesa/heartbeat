@@ -5,8 +5,13 @@ edition = "2024"
 
 [dependencies]
 heartbeat-core = { path = "../heartbeat-core" }
+aws-config.workspace = true
+aws-sdk-ssm.workspace = true
+chrono.workspace = true
+humantime.workspace = true
 lambda_runtime = "1"
 reqwest.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
 tracing.workspace = true

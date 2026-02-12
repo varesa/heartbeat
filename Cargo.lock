@@ -168,6 +168,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "aws-sdk-ssm"
+version = "1.104.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "977fc62e96999396cf286e1157d62f8439d3cf6edd234afaaf7bbc91e87a1426"
+dependencies = [
+ "aws-credential-types",
+ "aws-runtime",
+ "aws-smithy-async",
+ "aws-smithy-http",
+ "aws-smithy-json",
+ "aws-smithy-observability",
+ "aws-smithy-runtime",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types",
+ "aws-types",
+ "bytes",
+ "fastrand",
+ "http 0.2.12",
+ "http 1.4.0",
+ "regex-lite",
+ "tracing",
+]
+
+[[package]]
 name = "aws-sdk-sso"
 version = "1.94.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -918,8 +942,14 @@ checksum = "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100"
 name = "heartbeat-api"
 version = "0.1.0"
 dependencies = [
+ "aws-config",
+ "aws-sdk-dynamodb",
  "axum",
+ "chrono",
  "heartbeat-core",
+ "humantime",
+ "serde",
+ "serde_json",
  "tokio",
  "tower-http",
  "tracing",
@@ -930,9 +960,14 @@ dependencies = [
 name = "heartbeat-checker"
 version = "0.1.0"
 dependencies = [
+ "aws-config",
+ "aws-sdk-ssm",
+ "chrono",
  "heartbeat-core",
+ "humantime",
  "lambda_runtime",
  "reqwest",
+ "serde",
  "serde_json",
  "tokio",
  "tracing",
@@ -946,6 +981,7 @@ dependencies = [
  "aws-config",
  "aws-sdk-dynamodb",
  "chrono",
+ "humantime",
  "serde",
  "serde_dynamo",
  "serde_json",
@@ -1044,6 +1080,12 @@ name = "httpdate"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
+
+[[package]]
+name = "humantime"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "135b12329e5e3ce057a9f972339ea52bc954fe1e9358ef27f95e89716fbc5424"
 
 [[package]]
 name = "hyper"

@@ -9,6 +9,7 @@ members = [
 [workspace.dependencies]
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-dynamodb = "1"
+aws-sdk-ssm = "1"
 chrono = { version = "0.4", features = ["serde"] }
 humantime = "2"
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }

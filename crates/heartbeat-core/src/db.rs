@@ -104,7 +104,83 @@ impl DynamoStore {
         }
     }
 
-    // Phase 3: pub async fn query_overdue(&self, now: i64) -> Result<Vec<Monitor>, CoreError>
+    /// Query all monitors that are overdue as of `now_epoch`.
+    ///
+    /// Uses the `overdue-check-index` GSI with partition key `check_partition = "CHECK"`
+    /// and sort key `next_due < now_epoch`.
+    pub async fn query_overdue(&self, now_epoch: i64) -> Result<Vec<Monitor>, CoreError> {
+        let result = self
+            .client
+            .query()
+            .table_name(&self.table_name)
+            .index_name("overdue-check-index")
+            .key_condition_expression("check_partition = :cp AND next_due < :now")
+            .expression_attribute_values(":cp", AttributeValue::S("CHECK".to_string()))
+            .expression_attribute_values(":now", AttributeValue::N(now_epoch.to_string()))
+            .send()
+            .await
+            .map_err(|e| CoreError::DynamoSdk(Box::new(e)))?;
+
+        let monitors: Vec<Monitor> = serde_dynamo::from_items(result.items().to_vec())?;
+        Ok(monitors)
+    }
+
+    /// Query all monitors that currently have an active alert (last_alerted_at exists).
+    ///
+    /// Uses a table scan with a filter expression since there is no GSI for this.
+    pub async fn query_alerted(&self) -> Result<Vec<Monitor>, CoreError> {
+        let result = self
+            .client
+            .scan()
+            .table_name(&self.table_name)
+            .filter_expression("attribute_exists(last_alerted_at)")
+            .send()
+            .await
+            .map_err(|e| CoreError::DynamoSdk(Box::new(e)))?;
+
+        let monitors: Vec<Monitor> = serde_dynamo::from_items(result.items().to_vec())?;
+        Ok(monitors)
+    }
+
+    /// Update the alert state for a monitor after sending an alert.
+    ///
+    /// Sets `last_alerted_at` and `alert_count` on the monitor identified by `slug`.
+    pub async fn update_alert_state(
+        &self,
+        slug: &str,
+        now_epoch: i64,
+        alert_count: u32,
+    ) -> Result<(), CoreError> {
+        self.client
+            .update_item()
+            .table_name(&self.table_name)
+            .key("slug", AttributeValue::S(slug.to_string()))
+            .update_expression("SET last_alerted_at = :now, alert_count = :count")
+            .expression_attribute_values(":now", AttributeValue::N(now_epoch.to_string()))
+            .expression_attribute_values(":count", AttributeValue::N(alert_count.to_string()))
+            .send()
+            .await
+            .map_err(|e| CoreError::DynamoSdk(Box::new(e)))?;
+
+        Ok(())
+    }
+
+    /// Clear the alert state for a monitor after it recovers.
+    ///
+    /// Removes `last_alerted_at` and `alert_count` from the monitor identified by `slug`.
+    pub async fn clear_alert_state(&self, slug: &str) -> Result<(), CoreError> {
+        self.client
+            .update_item()
+            .table_name(&self.table_name)
+            .key("slug", AttributeValue::S(slug.to_string()))
+            .update_expression("REMOVE last_alerted_at, alert_count")
+            .send()
+            .await
+            .map_err(|e| CoreError::DynamoSdk(Box::new(e)))?;
+
+        Ok(())
+    }
+
     // Phase 4: pub async fn list_monitors(&self) -> Result<Vec<Monitor>, CoreError>
     // Phase 4: pub async fn delete_monitor(&self, slug: &Slug) -> Result<(), CoreError>
 }
