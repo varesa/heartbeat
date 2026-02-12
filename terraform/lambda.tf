@@ -8,6 +8,10 @@ data "archive_file" "placeholder" {
   }
 }
 
+locals {
+  release_build_path = "../target/lambda/heartbeat-checker/bootstrap.zip"
+}
+
 resource "aws_lambda_function" "checker" {
   function_name = "${var.prefix}-checker"
   role          = aws_iam_role.lambda_exec.arn
@@ -18,8 +22,10 @@ resource "aws_lambda_function" "checker" {
   memory_size   = 128
   timeout       = 30
 
-  filename         = data.archive_file.placeholder.output_path
-  source_code_hash = data.archive_file.placeholder.output_base64sha256
+  #filename         = data.archive_file.placeholder.output_path
+  #source_code_hash = data.archive_file.placeholder.output_base64sha256
+  filename         = local.release_build_path
+  source_code_hash = filesha256(local.release_build_path)
 
   reserved_concurrent_executions = 1
 
