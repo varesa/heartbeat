@@ -21,3 +21,9 @@ variable "telegram_chat_id" {
   type        = string
   sensitive   = true
 }
+
+variable "alert_email" {
+  description = "Email address for CloudWatch alarm notifications"
+  type        = string
+  sensitive   = true
+}

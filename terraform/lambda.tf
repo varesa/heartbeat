@@ -27,6 +27,8 @@ resource "aws_lambda_function" "checker" {
     variables = {
       HEARTBEAT_TABLE_NAME          = aws_dynamodb_table.monitors.name
       HEARTBEAT_API_KEYS_TABLE_NAME = aws_dynamodb_table.api_keys.name
+      TELEGRAM_BOT_TOKEN_PARAM      = aws_ssm_parameter.telegram_bot_token.name
+      TELEGRAM_CHAT_ID_PARAM        = aws_ssm_parameter.telegram_chat_id.name
     }
   }
 

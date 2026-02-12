@@ -1,6 +1,6 @@
 resource "aws_cloudwatch_event_rule" "checker_schedule" {
   name                = "${var.prefix}-checker-schedule"
-  schedule_expression = "rate(1 minute)"
+  schedule_expression = "rate(2 minutes)"
   is_enabled          = false
 }
 
