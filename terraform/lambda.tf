@@ -25,7 +25,7 @@ resource "aws_lambda_function" "checker" {
   #filename         = data.archive_file.placeholder.output_path
   #source_code_hash = data.archive_file.placeholder.output_base64sha256
   filename         = local.release_build_path
-  source_code_hash = filesha256(local.release_build_path)
+  code_sha256      = filebase64sha256(local.release_build_path)
 
   reserved_concurrent_executions = 1
 
@@ -36,10 +36,6 @@ resource "aws_lambda_function" "checker" {
       TELEGRAM_BOT_TOKEN_PARAM      = aws_ssm_parameter.telegram_bot_token.name
       TELEGRAM_CHAT_ID_PARAM        = aws_ssm_parameter.telegram_chat_id.name
     }
-  }
-
-  lifecycle {
-    ignore_changes = [filename, source_code_hash]
   }
 }
 
