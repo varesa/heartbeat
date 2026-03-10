@@ -62,7 +62,7 @@ pub async fn check_monitors(
                 match telegram.send_with_retry(&msg).await {
                     Ok(()) => {
                         store
-                            .update_alert_state(&monitor.slug, now, alert_count + 1)
+                            .update_alert_state(&monitor.slug, now, now, alert_count + 1)
                             .await?;
                         info!(slug = %monitor.slug, "sent first overdue alert");
                     }
@@ -84,7 +84,7 @@ pub async fn check_monitors(
                     match telegram.send_with_retry(&msg).await {
                         Ok(()) => {
                             store
-                                .update_alert_state(&monitor.slug, now, alert_count + 1)
+                                .update_alert_state(&monitor.slug, monitor.first_alerted_at.unwrap_or(now), now, alert_count + 1)
                                 .await?;
                             info!(
                                 slug = %monitor.slug,
@@ -120,8 +120,8 @@ pub async fn check_monitors(
         }
 
         // Monitor recovered (was alerted, now OK)
-        if let Some(last_alert) = monitor.last_alerted_at {
-            let downtime = (now - last_alert).max(0) as u64;
+        if let Some(first_alert) = monitor.first_alerted_at {
+            let downtime = (now - first_alert).max(0) as u64;
             let msg = alerts::format_recovery(&monitor.slug, downtime);
             match telegram.send_with_retry(&msg).await {
                 Ok(()) => {

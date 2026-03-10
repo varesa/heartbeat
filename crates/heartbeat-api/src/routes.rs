@@ -104,6 +104,7 @@ pub async fn heartbeat_handler(
         last_ping: now,
         next_due,
         check_partition: "CHECK".to_string(),
+        first_alerted_at: None,
         last_alerted_at: None,
         alert_count: None,
         created_at: now,
@@ -151,6 +152,7 @@ pub async fn fail_handler(
         last_ping: now,
         next_due: 0, // Immediately overdue
         check_partition: "CHECK".to_string(),
+        first_alerted_at: None,
         last_alerted_at: None,
         alert_count: None,
         created_at: now,

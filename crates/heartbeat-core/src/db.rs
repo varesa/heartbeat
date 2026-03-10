@@ -148,6 +148,7 @@ impl DynamoStore {
     pub async fn update_alert_state(
         &self,
         slug: &str,
+        first_alert: i64,
         now_epoch: i64,
         alert_count: u32,
     ) -> Result<(), CoreError> {
@@ -155,7 +156,8 @@ impl DynamoStore {
             .update_item()
             .table_name(&self.table_name)
             .key("slug", AttributeValue::S(slug.to_string()))
-            .update_expression("SET last_alerted_at = :now, alert_count = :count")
+            .update_expression("SET first_alerted_at = :first, last_alerted_at = :now, alert_count = :count")
+            .expression_attribute_values(":first", AttributeValue::N(first_alert.to_string()))
             .expression_attribute_values(":now", AttributeValue::N(now_epoch.to_string()))
             .expression_attribute_values(":count", AttributeValue::N(alert_count.to_string()))
             .send()

@@ -106,6 +106,10 @@ pub struct Monitor {
 
     /// Unix epoch seconds of the last alert sent (if any).
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub first_alerted_at: Option<i64>,
+    
+    /// Unix epoch seconds of the last alert sent (if any).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_alerted_at: Option<i64>,
 
     /// Number of consecutive alerts sent.
@@ -223,6 +227,7 @@ mod tests {
             last_ping: 1000,
             next_due,
             check_partition: "CHECK".into(),
+            first_alerted_at: None,
             last_alerted_at: None,
             alert_count: None,
             created_at: 1000,
